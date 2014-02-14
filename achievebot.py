@@ -3,7 +3,7 @@ from twisted.internet import ssl, reactor, protocol
 from twisted.words.protocols import irc
 
 #system imports
-import time, sys
+import time, sys, argparse
 from ConfigParser import RawConfigParser
 
 class AchievementHandler:
@@ -67,7 +67,40 @@ class AchieveBotFactory(protocol.ClientFactory):
 
 if __name__ == '__main__':
     #TODO: get stuff working here
+    parser = argparse.ArgumentParser(description='Bot for IRC achievements')
+    parser.add_argument('-c', '--config', default='abot.conf', metavar='FILE', help='Config file to use. If it is missing, a default configuration file will be generated at the same path.')
+    parser.add_argument('-s', '--server', help='Server to connect to (overrides config file)')
+    parser.add_argument('-p', '--port', type=int, help='Port to connect to (overrides config file)')
+    parser.add_argument('--ssl', action='store_true', help='Connect using SSL (overrides config file)')
+    args = parser.parse_args()
+
+    conf = RawConfigParser()
+    try:
+        conf.read(args.config)
+        serv = conf.get('Connection', 'server')
+        port = conf.getint('Connection', 'port')
+        usessl = conf.getboolean('Connection', 'usessl')
+    except:
+        print("Configuration file can't be read. Generating.")
+        conf.add_section('Connection')
+        conf.set('Connection', 'server', 'INSERT VALUE HERE')
+        conf.set('Connection', 'port', '6667')
+        conf.set('Connection', 'usessl', 'no')
+        conf.write(open(args.config, 'wb'))
+        print("Add IRC server address before using.")
+        sys.exit()
+
+    if args.server is not None:
+        serv = args.server
+    if args.port is not None:
+        port = args.port
+    if args.ssl:
+        usessl = True
+
     f = AchieveBotFactory()
-    reactor.connectSSL('irc.cat.pdx.edu', 6697, f, ssl.CertificateOptions())
+    if usessl:
+        reactor.connectSSL(serv, port, f, ssl.CertificateOptions())
+    else:
+        reactor.connectTCP(serv, port, f)
     reactor.run()
 
