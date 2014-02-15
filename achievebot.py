@@ -1,3 +1,8 @@
+#Copyright (c) 2014 David Harwood
+
+#Licensed under the terms of the MIT license
+#http://opensource.org/licenses/MIT
+
 #Twisted imports
 from twisted.internet import ssl, reactor, protocol
 from twisted.words.protocols import irc
