@@ -20,11 +20,14 @@ class AchievementHandler:
 
     def command(self, user, channel, msg):
         #TODO: do application-specific command
-        parse = msg.split(None, 2)
+        parse = msg.split(None, 1)
         if parse[0] == 'grant':
-            return self.grant(parse[1], parse[2])
+            granter = parse[1].split(None, 1)
+            return self.grant(granter[0], granter[1])
         elif parse[0] == 'earned':
             return self.earned(parse[1])
+        elif parse[0] == 'add':
+            return self.add_achievement(parse[1])
         else:
             return "Command %s not found" % (parse[0])
 
@@ -48,9 +51,14 @@ class AchievementHandler:
         earned = ', '.join([ line.strip().split(None, 2)[2] for line in open(self.userfile, 'r') if line.split()[0] == user ])
         return '%s has earned %s' % (user, earned)
 
-    def add_achievement(self, name, description=None, requirement=None):
-        #TODO: add new descriptions to the database
-        pass
+    def add_achievement(self, achieve_block):
+        parts = achieve_block.split(' : ')
+        if len(parts) < 2:
+            return "Achievement not added (I need at least a name and a description, more info optional)"
+        with open(self.achievefile, 'a') as achievements:
+            achievements.write(achieve_block)
+            achievements.flush()
+        return 'Added new achievement: %s' % (parts[0])
 
     def close(self):
         #TODO: close the connection to the database, finish things out
