@@ -30,6 +30,8 @@ class AchievementHandler:
             return self.add_achievement(parse[1])
         elif parse[0] == 'list':
             return self.list_achievements()
+        elif parse[0] == 'info':
+            return self.info(parse[1])
         else:
             return "Command %s not found" % (parse[0])
 
@@ -61,6 +63,16 @@ class AchievementHandler:
     def list_achievements(self):
         achievements = ', '.join([ line.split(' : ', 1)[0] for line in open(self.achievefile, 'r') ])
         return 'List of achievements: %s' % (achievements)
+
+    def info(self, achievement):
+        for line in open(self.achievefile, 'r'):
+            if line.partition(' : ')[0] == achievement:
+                parts = line.strip().split(' : ')
+                if len(parts) == 2:
+                    return '%s: %s' % (parts[0], parts[1])
+                else:
+                    return '%s: %s (%s)' % (parts[0], parts[1], parts[2])
+        return 'Achievement not found!'
 
 class AchieveBot(irc.IRCClient):
     """
