@@ -32,6 +32,8 @@ class AchievementHandler:
             return self.list_achievements()
         elif parse[0] == 'info':
             return self.info(parse[1])
+        elif parse[0] == 'help':
+            return self.help_info()
         else:
             return "Command %s not found" % (parse[0])
 
@@ -73,6 +75,23 @@ class AchievementHandler:
                 else:
                     return '%s: %s (%s)' % (parts[0], parts[1], parts[2])
         return 'Achievement not found!'
+
+    def help_info(self):
+        script = ['I am Achievebot, made to track IRC achievements',
+                'Commands:',
+                'grant <user> <achievement> -> Grant achievement to user',
+                'earned <user> -> Display all of the achievements the user has earned',
+                'list -> List all available achievements',
+                'add <name> : <description> : <how to earn> -> Add a new achievement to the system (<how to earn> is optional)',
+                'info <achievement> -> Show the full block of info on the specified achievement',
+                'help -> Display this help',
+                'join <channel> -> Join the specified channel',
+                'leave <channel> -> Leave the specified channel',
+                'quit -> Quit IRC',
+                ' ',
+                'More information and source code can be found at https://github.com/dharwood/Achievebot',
+                'Originally created by David Harwood']
+        return '\n'.join(script)
 
 class AchieveBot(irc.IRCClient):
     """
