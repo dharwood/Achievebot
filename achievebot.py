@@ -43,6 +43,7 @@ class AchievementHandler:
             return "Command %s not found" % (parse[0])
 
     def grant(self, user, achievement):
+        exists = False
         for line in open(self.achievefile, 'r'):
             if line.partition(' : ')[0] == achievement:
                 exists = True
@@ -93,7 +94,6 @@ class AchievementHandler:
                 'join <channel> -> Join the specified channel',
                 'leave <channel> -> Leave the specified channel',
                 'quit -> Quit IRC',
-                ' ',
                 'More information and source code can be found at https://github.com/dharwood/Achievebot',
                 'Originally created by David Harwood']
         return '\n'.join(script)
@@ -123,7 +123,11 @@ class AchieveBot(irc.IRCClient):
         if msg.startswith("quit"):
             self.quit(message="I have been told to leave")
         elif msg.startswith("join"):
-            self.join(msg.split()[1])
+            parts = msg.split()
+            if len(parts) > 2:
+                self.join(parts[1], key=parts[2])
+            else:
+                self.join(msg.split()[1])
         elif msg.startswith("leave"):
             self.leave(msg.split()[1], reason="I've been told to part")
         else:
