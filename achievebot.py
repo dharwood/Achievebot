@@ -46,7 +46,7 @@ class AchieveBot(irc.IRCClient):
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
-        self.achieve = AchievementHandler(open(self.factory.config, 'r'))
+        self.achieve = AchievementHandler(self.factory.appopts)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -75,8 +75,10 @@ class AchieveBotFactory(protocol.ClientFactory):
 
     protocol = AchieveBot
 
-    def __init__(self, config='abot.conf'):
+    def __init__(self, config, ircopts, appopts):
         self.config = config
+        self.ircopts = ircopts
+        self.appopts = appopts
 
     def clientConnectionLost(self, connector, reason):
         reactor.stop()
@@ -107,6 +109,8 @@ if __name__ == '__main__':
         conf.set('Connection', 'server', 'INSERT VALUE HERE')
         conf.set('Connection', 'port', '6667')
         conf.set('Connection', 'usessl', 'no')
+        conf.add_section('IRC Options')
+        conf.add_section('Achievement Options')
         conf.write(open(args.config, 'wb'))
         print("Add IRC server address before using.")
         sys.exit()
@@ -118,7 +122,7 @@ if __name__ == '__main__':
     if args.ssl:
         usessl = True
 
-    f = AchieveBotFactory()
+    f = AchieveBotFactory(args.config, dict(conf.items('IRC Options')), dict(conf.items('Achievement Options')))
     if usessl:
         reactor.connectSSL(serv, port, f, ssl.CertificateOptions())
     else:
