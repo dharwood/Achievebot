@@ -104,6 +104,7 @@ class AchieveBot(irc.IRCClient):
     """
 
     nickname = "achievebot"
+    lineRate = 0.2
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
