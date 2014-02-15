@@ -28,6 +28,8 @@ class AchievementHandler:
             return self.earned(parse[1])
         elif parse[0] == 'add':
             return self.add_achievement(parse[1])
+        elif parse[0] == 'list':
+            return self.list_achievements()
         else:
             return "Command %s not found" % (parse[0])
 
@@ -56,9 +58,13 @@ class AchievementHandler:
         if len(parts) < 2:
             return "Achievement not added (I need at least a name and a description, more info optional)"
         with open(self.achievefile, 'a') as achievements:
-            achievements.write(achieve_block)
+            achievements.write(achieve_block + '\n')
             achievements.flush()
         return 'Added new achievement: %s' % (parts[0])
+
+    def list_achievements(self):
+        achievements = ', '.join([ line.split(' : ', 1)[0] for line in open(self.achievefile, 'r') ])
+        return 'List of achievements: %s' % (achievements)
 
     def close(self):
         #TODO: close the connection to the database, finish things out
