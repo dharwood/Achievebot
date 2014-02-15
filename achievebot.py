@@ -23,9 +23,10 @@ class AchievementHandler:
         parse = msg.split(None, 2)
         if parse[0] == 'grant':
             return self.grant(parse[1], parse[2])
+        elif parse[0] == 'earned':
+            return self.earned(parse[1])
         else:
             return "Command %s not found" % (parse[0])
-        pass
 
     def grant(self, user, achievement):
         for line in open(self.achievefile, 'r'):
@@ -42,6 +43,10 @@ class AchievementHandler:
     def ungrant(self, user, achievement):
         #TODO: remove the achievement from the user
         pass
+
+    def earned(self, user):
+        earned = ', '.join([ line.strip().split(None, 2)[2] for line in open(self.userfile, 'r') if line.split()[0] == user ])
+        return '%s has earned %s' % (user, earned)
 
     def add_achievement(self, name, description=None, requirement=None):
         #TODO: add new descriptions to the database
@@ -69,13 +74,13 @@ class AchieveBot(irc.IRCClient):
         self.achieve.close()
 
     def privmsg(self, user, channel, msg):
+        user = user.split('!', 1)[0]
         if channel == self.nickname:
             self.command(user, user, msg)
         elif msg.startswith(self.nickname):
             self.command(user, channel, msg.split(None, 1)[1])
 
     def command(self, user, channel, msg):
-        user = user.split('!', 1)[0]
         if msg.startswith("quit"):
             self.quit(message="I have been told to leave")
         elif msg.startswith("join"):
