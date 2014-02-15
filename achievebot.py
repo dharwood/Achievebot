@@ -16,10 +16,10 @@ class AchievementHandler:
 
     def __init__(self, config):
         #TODO: read config file, make settings changes as needed
+        #more will be added here when there are acutally some options defined
         pass
 
     def command(self, user, channel, msg):
-        #TODO: do application-specific command
         parse = msg.split(None, 1)
         if parse[0] == 'grant':
             granter = parse[1].split(None, 1)
@@ -40,14 +40,10 @@ class AchievementHandler:
                 break
         if not exists:
             return 'Achievement not found!'
-        record = open(self.userfile, 'a')
-        record.write('%s -> %s\n' % (user, achievement))
-        record.flush()
+        with open(self.userfile, 'a') as record:
+            record.write('%s -> %s\n' % (user, achievement))
+            record.flush()
         return 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement)
-
-    def ungrant(self, user, achievement):
-        #TODO: remove the achievement from the user
-        pass
 
     def earned(self, user):
         earned = ', '.join([ line.strip().split(None, 2)[2] for line in open(self.userfile, 'r') if line.split()[0] == user ])
@@ -66,10 +62,6 @@ class AchievementHandler:
         achievements = ', '.join([ line.split(' : ', 1)[0] for line in open(self.achievefile, 'r') ])
         return 'List of achievements: %s' % (achievements)
 
-    def close(self):
-        #TODO: close the connection to the database, finish things out
-        pass
-
 class AchieveBot(irc.IRCClient):
     """
     An IRC bot to grant and keep track of achievements users earn.
@@ -77,15 +69,12 @@ class AchieveBot(irc.IRCClient):
 
     nickname = "achievebot"
 
-    #needed methods: connectionMade, connectionLost
-
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.achieve = AchievementHandler(self.factory.appopts)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
-        self.achieve.close()
 
     def privmsg(self, user, channel, msg):
         user = user.split('!', 1)[0]
