@@ -11,17 +11,33 @@ class AchievementHandler:
     The class that handles the actual achievements, who gets them, who doesn't, etc.
     """
 
+    achievefile = 'achievements'
+    userfile = 'users'
+
     def __init__(self, config):
         #TODO: read config file, make settings changes as needed
         pass
 
     def command(self, user, channel, msg):
         #TODO: do application-specific command
+        parse = msg.split(None, 2)
+        if parse[0] == 'grant':
+            return self.grant(parse[1], parse[2])
+        else:
+            return "Command %s not found" % (parse[0])
         pass
 
     def grant(self, user, achievement):
-        #TODO: grant the actual achievement to the user, add the user if they're not in the Users table already
-        pass
+        for line in open(self.achievefile, 'r'):
+            if line.partition(' : ')[0] == achievement:
+                exists = True
+                break
+        if not exists:
+            return 'Achievement not found!'
+        record = open(self.userfile, 'a')
+        record.write('%s -> %s\n' % (user, achievement))
+        record.flush()
+        return 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement)
 
     def ungrant(self, user, achievement):
         #TODO: remove the achievement from the user
@@ -54,19 +70,20 @@ class AchieveBot(irc.IRCClient):
 
     def privmsg(self, user, channel, msg):
         if channel == self.nickname:
-            self.command(user, channel, msg.split())
+            self.command(user, user, msg)
         elif msg.startswith(self.nickname):
-            self.command(user, channel, msg.split()[1:])
+            self.command(user, channel, msg.split(None, 1)[1])
 
     def command(self, user, channel, msg):
-        if msg[0] == "quit":
+        user = user.split('!', 1)[0]
+        if msg.startswith("quit"):
             self.quit(message="I have been told to leave")
-        elif msg[0] == "join":
-            self.join(msg[1])
-        elif msg[0] == "leave":
-            self.leave(msg[1], reason="I've been told to part")
+        elif msg.startswith("join"):
+            self.join(msg.split()[1])
+        elif msg.startswith("leave"):
+            self.leave(msg.split()[1], reason="I've been told to part")
         else:
-            self.msg(channel, self.achieve.command(msg))
+            self.msg(channel, self.achieve.command(user, channel, msg))
 
 class AchieveBotFactory(protocol.ClientFactory):
     """
