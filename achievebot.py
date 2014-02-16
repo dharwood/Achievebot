@@ -25,7 +25,7 @@ class AchievementHandler:
         pass
 
     def command(self, user, channel, msg):
-        parse = msg.split(None, 1)
+        parse = msg.strip().split(None, 1)
         if parse[0] == 'grant':
             granter = parse[1].split(None, 1)
             return self.grant(granter[0], self._titlecase(granter[1]))
