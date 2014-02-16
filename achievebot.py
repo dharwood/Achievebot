@@ -56,6 +56,8 @@ class AchievementHandler:
     def grant(self, user, achievement):
         if not self._achexists(achievement):
             return 'Achievement not found!'
+        if achievement in self.earned(user):
+            return "Achievement already earned"
         with open(self.userfile, 'a') as record:
             record.write('%s -> %s\n' % (user, achievement))
             record.flush()
