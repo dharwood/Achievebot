@@ -141,6 +141,8 @@ class AchieveBot(irc.IRCClient):
                 self.join(msg.split()[1])
         elif msg.startswith("leave"):
             self.leave(msg.split()[1], reason="I've been told to part")
+        elif msg.startswith("grant"):
+            self.notice(channel, self.achieve.command(user, channel, msg))
         else:
             self.msg(channel, self.achieve.command(user, channel, msg))
 
