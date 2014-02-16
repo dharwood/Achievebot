@@ -8,7 +8,7 @@ from twisted.internet import ssl, reactor, protocol
 from twisted.words.protocols import irc
 
 #system imports
-import time, sys, argparse, csv
+import time, sys, argparse, csv, re
 from ConfigParser import RawConfigParser
 
 class AchievementHandler:
@@ -28,7 +28,7 @@ class AchievementHandler:
         parse = msg.split(None, 1)
         if parse[0] == 'grant':
             granter = parse[1].split(None, 1)
-            return self.grant(granter[0], granter[1])
+            return self.grant(granter[0], self._titlecase(granter[1]))
         elif parse[0] == 'earned':
             return self.earned(parse[1])
         elif parse[0] == 'add':
@@ -36,19 +36,25 @@ class AchievementHandler:
         elif parse[0] == 'list':
             return self.list_achievements()
         elif parse[0] == 'info':
-            return self.info(parse[1])
+            return self.info(self._titlecase(parse[1]))
         elif parse[0] == 'help':
             return self.help_info()
         else:
             return "Command %s not found" % (parse[0])
 
-    def grant(self, user, achievement):
+    def _titlecase(self, s):
+        return re.sub(r"[A-Za-z]+('[A-Za-z]+)?", lambda mo: mo.group(0)[0].upper() + mo.group(0)[1:].lower(), s)
+
+    def _achexists(self, achievement):
         exists = False
         for line in open(self.achievefile, 'r'):
             if line.partition(' : ')[0] == achievement:
                 exists = True
                 break
-        if not exists:
+        return exists
+
+    def grant(self, user, achievement):
+        if not self._achexists(achievement):
             return 'Achievement not found!'
         with open(self.userfile, 'a') as record:
             record.write('%s -> %s\n' % (user, achievement))
@@ -62,9 +68,12 @@ class AchievementHandler:
     def add_achievement(self, achieve_block):
         parts = achieve_block.split(' : ')
         if len(parts) < 2:
-            return "Achievement not added (I need at least a name and a description, more info optional)"
+            return 'Achievement not added (I need at least a name and a description, more info optional)'
+        parts[0] = self._titlecase(parts[0])
+        if self._achexists(parts[0]):
+            return 'Achievement not added: achievement with that name already exists!'
         with open(self.achievefile, 'a') as achievements:
-            achievements.write(achieve_block + '\n')
+            achievements.write(' : '.join(parts) + '\n')
             achievements.flush()
         return 'Added new achievement: %s' % (parts[0])
 
@@ -94,8 +103,7 @@ class AchievementHandler:
                 'join <channel> -> Join the specified channel',
                 'leave <channel> -> Leave the specified channel',
                 'quit -> Quit IRC',
-                'More information and source code can be found at https://github.com/dharwood/Achievebot',
-                'Originally created by David Harwood']
+                'More information and source code can be found at https://github.com/dharwood/Achievebot']
         return '\n'.join(script)
 
 class AchieveBot(irc.IRCClient):
