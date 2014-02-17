@@ -119,15 +119,24 @@ class AchieveBot(irc.IRCClient):
 
     def command(self, user, channel, msg):
         if msg.startswith("quit"):
-            self.quit(message="I have been told to leave")
-        elif msg.startswith("join"):
-            parts = msg.split()
-            if len(parts) > 2:
-                self.join(parts[1], key=parts[2])
+            if user in self.factory.admins:
+                self.quit(message="I have been told to leave")
             else:
-                self.join(msg.split()[1])
+                self.msg(channel, "%s: No. And you can't make me." % (user))
+        elif msg.startswith("join"):
+            if user in self.factory.admins:
+                parts = msg.split()
+                if len(parts) > 2:
+                    self.join(parts[1], key=parts[2])
+                else:
+                    self.join(parts[1])
+            else:
+                self.msg(channel, 'No.')
         elif msg.startswith("leave"):
-            self.leave(msg.split()[1], reason="I've been told to part")
+            if user in self.factory.admins:
+                self.leave(msg.split()[1], reason="I've been told to part")
+            else:
+                self.msg(channel, 'Not gonna happen')
         else:
             vol, output = self.achieve.command(user, channel, msg)
             getattr(self, vol)(channel, output)
@@ -138,6 +147,8 @@ class AchieveBotFactory(protocol.ClientFactory):
     """
 
     protocol = AchieveBot
+
+    admins = []
 
     def __init__(self, config, ircopts, appopts):
         self.config = config

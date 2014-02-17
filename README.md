@@ -51,6 +51,20 @@ Information about which user have earned which achievements is stored in the fil
 <name> -> <achievement-name>
 ```
 
+## Commands
+
+* join &lt;channel&gt; &lt;key&gt;: Join a channel (This requires admin powers)
+* leave &lt;channel&gt;: Leave a channel (This requires admin powers)
+* quit: Quit and disconnect from IRC (This requires admin powers)
+* add &lt;name&gt; : &lt;description&gt;: Add a new achievement and description to the system
+* grant &lt;user&gt; &lt;achievement&gt;: Grant an achievement to a user
+* earned &lt;user&gt;: Show a list of all the achievements the user has earned
+* listachieve: Show a list of all available achievements
+* info &lt;achievement&gt;: Show the full description of an achievement
+* help: Show the available commands and source information
+
+Admin powers are granted by placing the admins' nicks in the list admins in AchieveBotFactory.
+
 ## Current Status
 
 Achievebot is still very young. Currently, it can connecs to the server, join and leave channels, answer to private messages, and grant, add, and display information on achievements. Giving Achievebot the command 'help' will display information about using the commands and about the bot itself.
