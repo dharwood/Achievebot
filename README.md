@@ -40,10 +40,10 @@ These options can be set in the configuration (by default, abot.conf), or when t
 Achievements are stored in the file 'achievements'. Each achievement is on one line and has the format:
 
 ```
-<name> : <description> : <more-information>
+<name> : <description>
 ```
 
-While the intention is that the description would be something somewhat silly and more-information be about how to earn the achievement, the more-information may be omitted if you would like.
+The intention is that the description would be something somewhat silly followed by something in parentheses about how to earn the achievement (though this is completely optional).
 
 Information about which user have earned which achievements is stored in the file 'users'. Each entry takes one line and is of the format:
 

@@ -58,9 +58,9 @@ class AchievementHandler:
     def add(self, achieve_block):
         parts = achieve_block.split(' : ')
         if len(parts) < 2:
-            return ('msg', 'Achievement not added (I need at least a name and a description, more info optional)')
+            return ('msg', 'Achievement not added: I need a name and a description')
         if self._achname(parts[0]):
-            return ('msg', 'Achievement not added: achievement with that name already exists!')
+            return ('msg', 'Achievement not added: Achievement with that name already exists!')
         with open(self.achievefile, 'a') as achievements:
             achievements.write(achieve_block + '\n')
             achievements.flush()
@@ -74,10 +74,7 @@ class AchievementHandler:
         for line in open(self.achievefile, 'r'):
             if line.partition(' : ')[0].lower() == achievement.lower():
                 parts = line.strip().split(' : ')
-                if len(parts) == 2:
-                    return ('msg', '%s: %s' % (parts[0], parts[1]))
-                else:
-                    return ('msg', '%s: %s (%s)' % (parts[0], parts[1], parts[2]))
+                return ('msg', '%s: %s' % (parts[0], parts[1]))
         return ('msg', 'Achievement not found!')
 
     def help(self):
@@ -86,7 +83,7 @@ class AchievementHandler:
                 'grant <user> <achievement> -> Grant achievement to user',
                 'earned <user> -> Display all of the achievements the user has earned',
                 'listachieve -> List all available achievements',
-                'add <name> : <description> : <how to earn> -> Add a new achievement to the system (<how to earn> is optional)',
+                'add <name> : <description> -> Add a new achievement to the system',
                 'info <achievement> -> Show the full block of info on the specified achievement',
                 'help -> Display this help',
                 'join <channel> -> Join the specified channel',
