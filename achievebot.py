@@ -8,7 +8,7 @@ from twisted.internet import ssl, reactor, protocol
 from twisted.words.protocols import irc
 
 #system imports
-import time, sys, argparse, csv, re
+import time, sys, argparse, re
 from ConfigParser import RawConfigParser
 
 class AchievementHandler:
@@ -34,26 +34,20 @@ class AchievementHandler:
         except:
             return ('msg', 'What?')
 
-    def _titlecase(self, s):
-        return re.sub(r"[A-Za-z]+('[A-Za-z]+)?", lambda mo: mo.group(0)[0].upper() + mo.group(0)[1:].lower(), s)
-
-    def _achexists(self, achievement):
-        exists = False
+    def _achname(self, achievement):
         for line in open(self.achievefile, 'r'):
-            if line.partition(' : ')[0] == achievement:
-                exists = True
-                break
-        return exists
+            if line.partition(' : ')[0].lower() == achievement.lower():
+                return line.partition(' : ')[0]
+        return None
 
     def grant(self, grant_block):
         user, achievement = grant_block.split(None, 1)
-        achievement = self._titlecase(achievement)
-        if not self._achexists(achievement):
+        if not self._achname(achievement):
             return ('msg', 'Achievement not found!')
-        if achievement in self.earned(user)[1]:
+        if achievement.lower() in self.earned(user)[1].lower():
             return ('msg', 'Achievement already earned')
         with open(self.userfile, 'a') as record:
-            record.write('%s -> %s\n' % (user, achievement))
+            record.write('%s -> %s\n' % (user, self._achname(achievement)))
             record.flush()
         return ('notice', 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement))
 
@@ -65,11 +59,10 @@ class AchievementHandler:
         parts = achieve_block.split(' : ')
         if len(parts) < 2:
             return ('msg', 'Achievement not added (I need at least a name and a description, more info optional)')
-        parts[0] = self._titlecase(parts[0])
-        if self._achexists(parts[0]):
+        if self._achname(parts[0]):
             return ('msg', 'Achievement not added: achievement with that name already exists!')
         with open(self.achievefile, 'a') as achievements:
-            achievements.write(' : '.join(parts) + '\n')
+            achievements.write(achieve_block + '\n')
             achievements.flush()
         return ('msg', 'Added new achievement: %s' % (parts[0]))
 
@@ -78,9 +71,8 @@ class AchievementHandler:
         return ('msg', 'List of achievements: %s' % (achievements))
 
     def info(self, achievement):
-        achievement = self._titlecase(achievement)
         for line in open(self.achievefile, 'r'):
-            if line.partition(' : ')[0] == achievement:
+            if line.partition(' : ')[0].lower() == achievement.lower():
                 parts = line.strip().split(' : ')
                 if len(parts) == 2:
                     return ('msg', '%s: %s' % (parts[0], parts[1]))
