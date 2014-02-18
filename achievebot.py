@@ -18,6 +18,8 @@ class AchievementHandler:
 
     achievefile = 'achievements'
     userfile = 'users'
+    admins = []
+    saynotice = 'grant_success'
 
     def __init__(self, config):
         #TODO: read config file, make settings changes as needed
@@ -32,7 +34,7 @@ class AchievementHandler:
             else:
                 return getattr(self, parse[0])(parse[1])
         except:
-            return ('msg', 'What?')
+            return (self._saypick('command_fail'), 'What?') #command_fail
 
     def _achname(self, achievement):
         for line in open(self.achievefile, 'r'):
@@ -40,42 +42,48 @@ class AchievementHandler:
                 return line.partition(' : ')[0]
         return None
 
+    def _saypick(self, msg):
+        if msg in self.saynotice:
+            return 'notice'
+        else:
+            return 'msg'
+
     def grant(self, grant_block):
         user, achievement = grant_block.split(None, 1)
         if not self._achname(achievement):
-            return ('msg', 'Achievement not found!')
+            return (self._saypick('grant_nofound'), 'Achievement not found!') #grant_notfound
         if achievement.lower() in self.earned(user)[1].lower():
-            return ('msg', 'Achievement already earned')
+            return (self._saypick('grant_earned'), 'Achievement already earned') #grant_earned
         with open(self.userfile, 'a') as record:
             record.write('%s -> %s\n' % (user, self._achname(achievement)))
             record.flush()
-        return ('notice', 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement))
+        return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement)) #grant_success
 
     def earned(self, user):
         earned = ', '.join([ line.strip().split(None, 2)[2] for line in open(self.userfile, 'r') if line.split()[0] == user ])
-        return ('msg', 'User %s has earned %s' % (user, earned))
+        return (self._saypick('earned'), 'User %s has earned %s' % (user, earned)) #earned
 
     def add(self, achieve_block):
         parts = achieve_block.split(' : ')
         if len(parts) < 2:
-            return ('msg', 'Achievement not added: I need a name and a description')
+            return (self._saypick('add_nodesc'), 'Achievement not added: I need a name and a description') #add_nodesc
         if self._achname(parts[0]):
-            return ('msg', 'Achievement not added: Achievement with that name already exists!')
+            return (self._saypick('add_exists'), 'Achievement not added: Achievement with that name already exists!') #add_exists
         with open(self.achievefile, 'a') as achievements:
             achievements.write(achieve_block + '\n')
             achievements.flush()
-        return ('msg', 'Added new achievement: %s' % (parts[0]))
+        return (self._saypick('add_success'), 'Added new achievement: %s' % (parts[0])) #add_success
 
     def listachieve(self):
         achievements = ', '.join([ line.split(' : ', 1)[0] for line in open(self.achievefile, 'r') ])
-        return ('msg', 'List of achievements: %s' % (achievements))
+        return (self._saypick('listachieve'), 'List of achievements: %s' % (achievements)) #listachieve
 
     def info(self, achievement):
         for line in open(self.achievefile, 'r'):
             if line.partition(' : ')[0].lower() == achievement.lower():
                 parts = line.strip().split(' : ')
-                return ('msg', '%s: %s' % (parts[0], parts[1]))
-        return ('msg', 'Achievement not found!')
+                return (self._saypick('info_success'), '%s: %s' % (parts[0], parts[1])) #info_success
+        return (self._saypick('info_nofound'), 'Achievement not found!') #info_notfound
 
     def help(self):
         script = ['I am Achievebot, made to track IRC achievements',
@@ -90,7 +98,7 @@ class AchievementHandler:
                 'leave <channel> -> Leave the specified channel',
                 'quit -> Quit IRC',
                 'More information and source code can be found at https://github.com/dharwood/Achievebot']
-        return ('msg', '\n'.join(script))
+        return (self._saypick('help'), '\n'.join(script)) #help
 
 class AchieveBot(irc.IRCClient):
     """
@@ -99,6 +107,8 @@ class AchieveBot(irc.IRCClient):
 
     nickname = "achievebot"
     lineRate = 0.2
+    nickpass = None
+    channels = []
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
