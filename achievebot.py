@@ -99,6 +99,10 @@ class AchievementHandler:
                 'More information and source code can be found at https://github.com/dharwood/Achievebot']
         return (self._saypick('help'), '\n'.join(script)) #help
 
+    def reload(self, config):
+        for setting in config:
+            setattr(self, setting[0], setting[1])
+
 class AchieveBot(irc.IRCClient):
     """
     An IRC bot to grant and keep track of achievements users earn.
@@ -111,12 +115,12 @@ class AchieveBot(irc.IRCClient):
 
     def __init__(self, ircopts):
         for setting in ircopts:
-            getattr(self, setting[0], setting[1])
+            setattr(self, setting[0], setting[1])
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.achieve = AchievementHandler(self.factory.appopts)
-        for chan in self.channels.split():
+        for chan in self.channels.split(','):
             self.join(*chan.split())
 
     def connectionLost(self, reason):
@@ -152,6 +156,7 @@ class AchieveBot(irc.IRCClient):
         elif msg.startswith('reload'):
             if user in self.achieve.admins:
                 self.reload()
+                self.msg(channel, 'Reload complete')
             else:
                 self.msg(channel, 'I change myself only for admins')
         else:
