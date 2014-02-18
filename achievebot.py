@@ -18,13 +18,12 @@ class AchievementHandler:
 
     achievefile = 'achievements'
     userfile = 'users'
-    admins = []
+    admins = ''
     saynotice = 'grant_success'
 
     def __init__(self, config):
-        #TODO: read config file, make settings changes as needed
-        #more will be added here when there are acutally some options defined
-        pass
+        for setting in config:
+            setattr(self, setting[0], setting[1])
 
     def command(self, user, channel, msg):
         try:
@@ -108,11 +107,17 @@ class AchieveBot(irc.IRCClient):
     nickname = "achievebot"
     lineRate = 0.2
     nickpass = None
-    channels = []
+    channels = ''
+
+    def __init__(self, ircopts):
+        for setting in ircopts:
+            getattr(self, setting[0], setting[1])
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.achieve = AchievementHandler(self.factory.appopts)
+        for chan in self.channels.split():
+            self.join(*chan.split())
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -126,12 +131,12 @@ class AchieveBot(irc.IRCClient):
 
     def command(self, user, channel, msg):
         if msg.startswith("quit"):
-            if user in self.factory.admins:
+            if user in self.achieve.admins:
                 self.quit(message="I have been told to leave")
             else:
                 self.msg(channel, "%s: No. And you can't make me." % (user))
         elif msg.startswith("join"):
-            if user in self.factory.admins:
+            if user in self.achieve.admins:
                 parts = msg.split()
                 if len(parts) > 2:
                     self.join(parts[1], key=parts[2])
@@ -140,27 +145,41 @@ class AchieveBot(irc.IRCClient):
             else:
                 self.msg(channel, 'No.')
         elif msg.startswith("leave"):
-            if user in self.factory.admins:
+            if user in self.achieve.admins:
                 self.leave(msg.split()[1], reason="I've been told to part")
             else:
                 self.msg(channel, 'Not gonna happen')
+        elif msg.startswith('reload'):
+            if user in self.achieve.admins:
+                self.reload()
+            else:
+                self.msg(channel, 'I change myself only for admins')
         else:
             vol, output = self.achieve.command(user, channel, msg)
             getattr(self, vol)(channel, output)
+
+    def reload(self):
+        self.factory.reload()
+        for setting in self.factory.ircopts:
+            if setting[0] == 'nickname' and setting[1] != self.nickname:
+                self.setNick(setting[1])
+            setattr(self, setting[0], setting[1])
+        self.achieve.reload(self.factory.appopts)
 
 class AchieveBotFactory(protocol.ClientFactory):
     """
     A factory for AchieveBots.
     """
 
-    protocol = AchieveBot
-
-    admins = []
-
     def __init__(self, config, ircopts, appopts):
         self.config = config
         self.ircopts = ircopts
         self.appopts = appopts
+
+    def buildProtocol(self, addr):
+        p = AchieveBot(self.ircopts)
+        p.factory = self
+        return p
 
     def clientConnectionLost(self, connector, reason):
         reactor.stop()
@@ -170,6 +189,13 @@ class AchieveBotFactory(protocol.ClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         reactor.stop()
+
+    def reload(self):
+        conf = RawConfigParser()
+        conf.read(self.config)
+        self.ircopts = conf.items('IRC Options')
+        self.appopts = conf.items('Achievement Options')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Bot for IRC achievements')
@@ -204,7 +230,7 @@ if __name__ == '__main__':
     if args.ssl:
         usessl = True
 
-    f = AchieveBotFactory(args.config, dict(conf.items('IRC Options')), dict(conf.items('Achievement Options')))
+    f = AchieveBotFactory(args.config, conf.items('IRC Options'), conf.items('Achievement Options'))
     if usessl:
         reactor.connectSSL(serv, port, f, ssl.CertificateOptions())
     else:

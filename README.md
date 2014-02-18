@@ -62,6 +62,7 @@ Information about which user have earned which achievements is stored in the fil
 * listachieve: Show a list of all available achievements
 * info &lt;achievement&gt;: Show the full description of an achievement
 * help: Show the available commands and source information
+* reload: Reload the configuration settings from the configuration file (This only affects IRC Options and Achievement Options)
 
 Admin powers are granted by placing the admins' nicks in the list admins in AchieveBotFactory.
 
