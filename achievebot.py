@@ -56,7 +56,7 @@ class AchievementHandler:
         with open(self.userfile, 'a') as record:
             record.write('%s -> %s\n' % (user, self._achname(achievement)))
             record.flush()
-        return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement)) #grant_success
+        return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, self._achname(achievement))) #grant_success
 
     def earned(self, user):
         earned = ', '.join([ line.strip().split(None, 2)[2] for line in open(self.userfile, 'r') if line.split()[0] == user ])
