@@ -28,18 +28,23 @@ class AchievementHandler:
     def command(self, user, channel, msg):
         try:
             parse = msg.strip().split(None, 1)
-            if len(parse) < 2:
-                return getattr(self, parse[0])()
-            else:
-                return getattr(self, parse[0])(parse[1])
+            return getattr(self, parse[0])(user, channel, parse[1] if len(parse) > 1 else None)
         except:
             return (self._saypick('command_fail'), 'What?') #command_fail
 
-    def _achname(self, achievement):
-        for line in open(self.achievefile, 'r'):
-            if line.partition(' : ')[0].lower() == achievement.lower():
-                return line.partition(' : ')[0]
+    def _achline(self, achievement):
+        with open(self.achievefile, 'r') as record:
+            for line in record:
+                if line.partition(' : ')[0].lower() == achievement.lower():
+                    return line
         return None
+
+    def _achname(self, achievement):
+        line = self._achline(achievement)
+        if line:
+            return line.partition(' : ')[0]
+        else:
+            return None
 
     def _saypick(self, msg):
         if msg in self.saynotice:
@@ -47,45 +52,60 @@ class AchievementHandler:
         else:
             return 'msg'
 
-    def grant(self, grant_block):
+    def grant(self, granter, channel, grant_block):
         user, achievement = grant_block.split(None, 1)
-        if not self._achname(achievement):
-            return (self._saypick('grant_nofound'), 'Achievement not found!') #grant_notfound
-        if achievement.lower() in self.earned(user)[1].lower():
-            return (self._saypick('grant_earned'), 'Achievement already earned') #grant_earned
+        if self._achline(achievement):
+            if achievement.lower() in self.earned(granter, channel, user)[1].lower():
+                return (self._saypick('grant_earned'), 'Achievement already earned!') #grant_earned
+            if self._achline(achievement).count(' :') == 2:
+                perms = self._achline(achievement).split(' :')[2].split()
+                if granter in self.admins or granter in perms:
+                    return self._grant(user, self._achname(achievement))
+                else:
+                    return (self._saypick('grant_permissions'), 'This achievement is restricted.') #grant_permissions
+            else:
+                return self._grant(user, self._achname(achievement))
+        else:
+            return (self._saypick('grant_notfound'), 'Achievement not found!') #grant_notfound
+
+    def _grant(self, user, achievement):
         with open(self.userfile, 'a') as record:
-            record.write('%s -> %s\n' % (user, self._achname(achievement)))
+            record.write('%s -> %s\n' % (user, achievement))
         return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, self._achname(achievement))) #grant_success
 
-    def earned(self, user):
+    def earned(self, asker, channel, user):
         with open(self.userfile, 'r') as record:
-            earned = ', '.join([ line.strip().split(None, 2)[2] for line in record if line.split()[0].lower() == user.lower() ])
+            earned = ', '.join([line.strip().split(None, 2)[2] for line in record if line.split()[0] == user.lower()])
         return (self._saypick('earned'), 'User %s has earned %s' % (user, earned)) #earned
 
-    def add(self, achieve_block):
+    def add(self, adder, channel, achieve_block):
         parts = achieve_block.split(' : ')
         if len(parts) < 2:
             return (self._saypick('add_nodesc'), 'Achievement not added: I need a name and a description') #add_nodesc
+        if achieve_block.count(' :') >= 2 and adder not in self.admins:
+            return (self._saypick('add_perms'), 'You must be an admin to add a restricted achievement') #adminadd_perms
         if self._achname(parts[0]):
             return (self._saypick('add_exists'), 'Achievement not added: Achievement with that name already exists!') #add_exists
         with open(self.achievefile, 'a') as achievements:
             achievements.write(achieve_block + '\n')
         return (self._saypick('add_success'), 'Added new achievement: %s' % (parts[0])) #add_success
 
-    def listachieve(self):
+    def listachieve(self, *args):
         with open(self.achievefile, 'r') as record:
-            achievements = ', '.join([ line.split(' : ', 1)[0] for line in record ])
+            achievements = ', '.join([line.split(' : ', 1)[0] for line in record])
         return (self._saypick('listachieve'), 'List of achievements: %s' % (achievements)) #listachieve
 
-    def info(self, achievement):
-        with open(self.achievefile, 'r') as record:
-            for line in record:
-                if line.partition(' : ')[0].lower() == achievement.lower():
-                    parts = line.strip().split(' : ')
-                    return (self._saypick('info_success'), '%s: %s' % (parts[0], parts[1])) #info_success
-        return (self._saypick('info_nofound'), 'Achievement not found!') #info_notfound
+    def info(self, asker, channel, achievement):
+        line = self._achline(achievement)
+        if not line:
+            return (self._saypick('info_notfound'), 'Achievement not found!') #info_notfound
+        parts = line.split(' :')
+        if line.count(' :') >= 2 and asker in self.admins:
+            return (self._saypick('info_perms'), '%s:%s (admins%s)' % (parts[0], parts[1], parts[2].rstrip())) #info_perms
+        else:
+            return (self._saypick('info_success'), '%s:%s' % (parts[0], parts[1])) #info_success
 
-    def help(self):
+    def help(self, *args):
         script = ['I am Achievebot, made to track IRC achievements',
                 'Commands:',
                 'grant <user> <achievement> -> Grant achievement to user',
@@ -101,7 +121,7 @@ class AchievementHandler:
                 'More information and source code can be found at https://github.com/dharwood/Achievebot']
         return (self._saypick('help'), '\n'.join(script)) #help
 
-    def ungrant(self, ungrant_block):
+    def ungrant(self, asker, channel, ungrant_block):
         output = []
         earned = False
         user, achievement = ungrant_block.split(None, 1)
