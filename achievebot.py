@@ -55,11 +55,11 @@ class AchievementHandler:
             return (self._saypick('grant_earned'), 'Achievement already earned') #grant_earned
         with open(self.userfile, 'a') as record:
             record.write('%s -> %s\n' % (user, self._achname(achievement)))
-            record.flush()
         return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, self._achname(achievement))) #grant_success
 
     def earned(self, user):
-        earned = ', '.join([ line.strip().split(None, 2)[2] for line in open(self.userfile, 'r') if line.split()[0] == user ])
+        with open(self.userfile, 'r') as record:
+            earned = ', '.join([ line.strip().split(None, 2)[2] for line in record if line.split()[0].lower() == user.lower() ])
         return (self._saypick('earned'), 'User %s has earned %s' % (user, earned)) #earned
 
     def add(self, achieve_block):
@@ -70,18 +70,19 @@ class AchievementHandler:
             return (self._saypick('add_exists'), 'Achievement not added: Achievement with that name already exists!') #add_exists
         with open(self.achievefile, 'a') as achievements:
             achievements.write(achieve_block + '\n')
-            achievements.flush()
         return (self._saypick('add_success'), 'Added new achievement: %s' % (parts[0])) #add_success
 
     def listachieve(self):
-        achievements = ', '.join([ line.split(' : ', 1)[0] for line in open(self.achievefile, 'r') ])
+        with open(self.achievefile, 'r') as record:
+            achievements = ', '.join([ line.split(' : ', 1)[0] for line in record ])
         return (self._saypick('listachieve'), 'List of achievements: %s' % (achievements)) #listachieve
 
     def info(self, achievement):
-        for line in open(self.achievefile, 'r'):
-            if line.partition(' : ')[0].lower() == achievement.lower():
-                parts = line.strip().split(' : ')
-                return (self._saypick('info_success'), '%s: %s' % (parts[0], parts[1])) #info_success
+        with open(self.achievefile, 'r') as record:
+            for line in record:
+                if line.partition(' : ')[0].lower() == achievement.lower():
+                    parts = line.strip().split(' : ')
+                    return (self._saypick('info_success'), '%s: %s' % (parts[0], parts[1])) #info_success
         return (self._saypick('info_nofound'), 'Achievement not found!') #info_notfound
 
     def help(self):
