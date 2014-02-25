@@ -58,11 +58,12 @@ Information about which user have earned which achievements is stored in the fil
 * quit: Quit and disconnect from IRC (This requires admin powers)
 * add &lt;name&gt; : &lt;description&gt;: Add a new achievement and description to the system
 * grant &lt;user&gt; &lt;achievement&gt;: Grant an achievement to a user
+* ungrant &lt;user&gt; &lt;achievement&gt;: Remove an achievement from a user
 * earned &lt;user&gt;: Show a list of all the achievements the user has earned
 * listachieve: Show a list of all available achievements
 * info &lt;achievement&gt;: Show the full description of an achievement
 * help: Show the available commands and source information
-* reload: Reload the configuration settings from the configuration file (This only affects IRC Options and Achievement Options)
+* reload: Reload the configuration settings from the configuration file (This only affects IRC Options and Achievement Options and requires admin powers)
 
 Admin powers are granted by placing the admins' nicks in the list admins in AchieveBotFactory.
 
@@ -70,12 +71,11 @@ Admin powers are granted by placing the admins' nicks in the list admins in Achi
 
 Achievebot is still very young. Currently, it can connecs to the server, join and leave channels, answer to private messages, and grant, add, and display information on achievements. Giving Achievebot the command 'help' will display information about using the commands and about the bot itself.
 
-Please note that **there is no access control**. This means that when the bot is running, anyone can tell it to join or leave any channel, add or grant any achievement, flood a channel with help or achievement info, or quit IRC altogether. Please make sure that this is OK before you start running the bot, and don't be surprised if ops kick the bot (or you) for being a problem.
+Please note that **there is very little access control**. This means that when the bot is running, anyone can tell it to add or grant any achievement, or flood a channel with help or achievement info. Please make sure that this is OK before you start running the bot, and don't be surprised if ops kick the bot (or you) for being a problem. Make sure that you also add your nick and the nicks of others you trust to the admins list in the configuration file.
 
 ## Future Plans
 
 * Some kind of access control for users
-* More options to control usage (e.g., change nickname without having to modify code, channels to join on startup, etc.)
 * Code cleanup (it's a bit of a mess at the moment)
 * Probably plenty more that I didn't think of while I was typing this (suggestions and pull requests always welcome)
 

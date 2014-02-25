@@ -89,6 +89,7 @@ class AchievementHandler:
         script = ['I am Achievebot, made to track IRC achievements',
                 'Commands:',
                 'grant <user> <achievement> -> Grant achievement to user',
+                'ungrant <user> <achievement> -> Remove an achievement from a user',
                 'earned <user> -> Display all of the achievements the user has earned',
                 'listachieve -> List all available achievements',
                 'add <name> : <description> -> Add a new achievement to the system',
@@ -99,6 +100,22 @@ class AchievementHandler:
                 'quit -> Quit IRC',
                 'More information and source code can be found at https://github.com/dharwood/Achievebot']
         return (self._saypick('help'), '\n'.join(script)) #help
+
+    def ungrant(self, ungrant_block):
+        output = []
+        earned = False
+        user, achievement = ungrant_block.split(None, 1)
+        with open(self.userfile, 'r') as reader:
+            for line in reader:
+                if '%s -> %s'.lower() % (user, achievement) not in line.lower():
+                    output.append(line)
+                else:
+                    earned = True
+        if not earned:
+            return (self._saypick('ungrant_unearned'), 'User %s has not earned that achievement' % user) #ungrant_unearned
+        with open(self.userfile, 'w') as writer:
+            writer.writelines(output)
+        return (self._saypick('ungrant_success'), "Achievement %s has been removed from %s" % (self._achname(achievement), user)) #ungrant_success
 
     def reload(self, config):
         for setting in config:
@@ -121,7 +138,9 @@ class AchieveBot(irc.IRCClient):
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.achieve = AchievementHandler(self.factory.appopts)
-        for chan in self.channels.split(','):
+        for chan in self.channels:
+            if chan == '':
+                continue
             self.join(*chan.split())
 
     def connectionLost(self, reason):
