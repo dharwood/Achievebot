@@ -138,7 +138,7 @@ class AchieveBot(irc.IRCClient):
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.achieve = AchievementHandler(self.factory.appopts)
-        for chan in self.channels:
+        for chan in self.channels.split(','):
             if chan == '':
                 continue
             self.join(*chan.split())
