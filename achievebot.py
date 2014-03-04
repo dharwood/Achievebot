@@ -21,9 +21,6 @@ class AchievementHandler:
     admins = ''
     saynotice = 'grant_success'
 
-    class Achievement:
-        pass
-
     def __init__(self, config):
         for setting in config:
             setattr(self, setting[0], setting[1])
@@ -57,13 +54,7 @@ class AchievementHandler:
         out = dict()
         with open(self.achievefile, 'r') as ach:
             for line in ach:
-                parts = line.split(' : ')
-                temp = self.Achievement()
-                temp.name = parts[0]
-                temp.description = parts[1]
-                temp.restricted = parts[2]
-                temp.perms = parts[3].strip()
-                out[parts[0].lower()] = temp #the .lower() is to normalize
+                out[line.partition(' : ')[0].lower()] = self._ach_make(*line.split(' : '))
         return out
 
     def read_users(self):
@@ -105,11 +96,13 @@ class AchievementHandler:
         """
         Create and return a new Achievement object
         """
-        ach = self.Achievement()
-        ach.name = name
-        ach.description = description
-        ach.restricted = restricted
-        ach.perms = perms
+        class Achievement:
+            pass
+        ach = Achievement()
+        ach.name = name.strip()
+        ach.description = description.strip()
+        ach.restricted = restricted.strip()
+        ach.perms = perms.strip()
         return ach
 
     def grant(self, granter, channel, grant_block):
