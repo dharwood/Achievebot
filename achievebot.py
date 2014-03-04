@@ -21,9 +21,14 @@ class AchievementHandler:
     admins = ''
     saynotice = 'grant_success'
 
+    class Achievement:
+        pass
+
     def __init__(self, config):
         for setting in config:
             setattr(self, setting[0], setting[1])
+        self.achievestruct = self.read_achievements()
+        self.userstruct = self.read_users()
 
     def command(self, user, channel, msg):
         try:
@@ -32,19 +37,19 @@ class AchievementHandler:
         except:
             return (self._saypick('command_fail'), 'What?') #command_fail
 
-    def _achline(self, achievement):
-        with open(self.achievefile, 'r') as record:
-            for line in record:
-                if line.partition(' : ')[0].lower() == achievement.lower():
-                    return line
-        return None
+#    def _achline(self, achievement):
+#        with open(self.achievefile, 'r') as record:
+#            for line in record:
+#                if line.partition(' : ')[0].lower() == achievement.lower():
+#                    return line
+#        return None
 
-    def _achname(self, achievement):
-        line = self._achline(achievement)
-        if line:
-            return line.partition(' : ')[0]
-        else:
-            return None
+#    def _achname(self, achievement):
+#        line = self._achline(achievement)
+#        if line:
+#            return line.partition(' : ')[0]
+#        else:
+#            return None
 
     def _saypick(self, msg):
         if msg in self.saynotice:
@@ -52,58 +57,105 @@ class AchievementHandler:
         else:
             return 'msg'
 
+    def read_achievements(self):
+        #an achievement has several fields: name, description, restricted, permissions
+        out = dict()
+        #class Achievement: #using an object as a struct, as recommended in the official docs
+        #    pass
+        with open(self.achievefile, 'r') as ach:
+            for line in ach:
+                parts = line.split(' : ')
+                temp = self.Achievement()
+                temp.name = parts[0]
+                temp.description = parts[1]
+                temp.restricted = parts[2]
+                temp.perms = parts[3].strip()
+                out[parts[0].lower()] = temp #the .lower() is to normalize
+        return out
+
+    def read_users(self):
+        out = dict()
+        with open(self.userfile, 'r') as users:
+            for line in users:
+                parts = line.partition(' -> ')
+                out[parts[0].lower()] = parts[2].strip().split(';')
+        return out
+
+    def write_achievements(self):
+        out = []
+        for name in self.achievestruct.keys():
+            out.append(' : '.join((name.name, name.description, name.restricted, name.perms)))
+        with open(self.achievefile, 'w') as ach:
+            ach.write('\n'.join(out))
+
+    def write_users(self):
+        with open(self.userfile, 'w') as users:
+            users.write('\n'.join([' -> '.join((name, ';'.join(self.userstruct[name]))) for name in self.userstruct.keys()]))
+
+    def append_achievement(self, achievement):
+        with open(self.achievefile, 'a') as ach:
+            ach.write(' : '.join((achievement.name, achievement.description, achievement.restricted, achievement.perms)) + '\n')
+
+    def _ach_make(self, name, description, restricted='False', perms=''):
+        ach = self.Achievement()
+        ach.name = name
+        ach.description = description
+        ach.restricted = restricted
+        ach.perms = perms
+        return ach
+
     def grant(self, granter, channel, grant_block):
         user, achievement = grant_block.split(None, 1)
-        if self._achline(achievement):
-            if achievement.lower() in self.earned(granter, channel, user)[1].lower():
+        if achievement.lower() in self.achievestruct:
+            if achievement.lower() in self.userstruct[user.lower()]:
                 return (self._saypick('grant_earned'), 'Achievement already earned!') #grant_earned
-            if self._achline(achievement).count(' :') == 2:
-                perms = self._achline(achievement).split(' :')[2].split()
+            if self.achievestruct[achievement.lower()].restricted in ['True', 'true', 'yes', 'restricted']:
+                perms = self.achievestruct[achievement.lower()].perms.split()
                 if granter in self.admins or granter in perms:
-                    return self._grant(user, self._achname(achievement))
+                    return self._grant(user, self.achievestruct[achievement.lower()].name)
                 else:
                     return (self._saypick('grant_permissions'), 'This achievement is restricted.') #grant_permissions
             else:
-                return self._grant(user, self._achname(achievement))
+                return self._grant(user, self.achievestruct[achievement.lower()].name)
         else:
             return (self._saypick('grant_notfound'), 'Achievement not found!') #grant_notfound
 
     def _grant(self, user, achievement):
-        with open(self.userfile, 'a') as record:
-            record.write('%s -> %s\n' % (user, achievement))
-        return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, self._achname(achievement))) #grant_success
+        if user not in self.userstruct.keys():
+            self.userstruct[user.lower()] = []
+        self.userstruct[user.lower()].append(achievement)
+        self.write_users()
+        return (self._saypick('grant_success'), 'Achievement unlocked! %s has earned the achievement %s!' % (user, achievement)) #grant_success
 
     def earned(self, asker, channel, user):
-        with open(self.userfile, 'r') as record:
-            earned = ', '.join([line.strip().split(None, 2)[2] for line in record if line.split()[0] == user.lower()])
+        earned = ', '.join(self.userstruct[user.lower()])
         return (self._saypick('earned'), 'User %s has earned %s' % (user, earned)) #earned
 
     def add(self, adder, channel, achieve_block):
         parts = achieve_block.split(' : ')
         if len(parts) < 2:
             return (self._saypick('add_nodesc'), 'Achievement not added: I need a name and a description') #add_nodesc
-        if achieve_block.count(' :') >= 2 and adder not in self.admins:
-            return (self._saypick('add_perms'), 'You must be an admin to add a restricted achievement') #adminadd_perms
-        if self._achname(parts[0]):
+        if parts[0].lower() in self.achievestruct:
             return (self._saypick('add_exists'), 'Achievement not added: Achievement with that name already exists!') #add_exists
-        with open(self.achievefile, 'a') as achievements:
-            achievements.write(achieve_block + '\n')
+        ach = self._ach_make(*parts)
+        if adder not in self.admins and ach.restricted in ['True', 'true', 'restricted', 'yes']:
+            return (self._saypick('add_perms'), 'You must be an admin to add a restricted achievement') #adminadd_perms
+        self.achievestruct[parts[0].lower()] = ach
+        self.append_achievement(self.achievestruct[parts[0].lower()])
         return (self._saypick('add_success'), 'Added new achievement: %s' % (parts[0])) #add_success
 
     def listachieve(self, *args):
-        with open(self.achievefile, 'r') as record:
-            achievements = ', '.join([line.split(' : ', 1)[0] for line in record])
+        achievements = ', '.join([self.achievestruct[ach].name for ach in self.achievestruct.keys()])
         return (self._saypick('listachieve'), 'List of achievements: %s' % (achievements)) #listachieve
 
     def info(self, asker, channel, achievement):
-        line = self._achline(achievement)
-        if not line:
+        if achievement.lower() not in self.achievestruct:
             return (self._saypick('info_notfound'), 'Achievement not found!') #info_notfound
-        parts = line.split(' :')
-        if line.count(' :') >= 2 and asker in self.admins:
-            return (self._saypick('info_perms'), '%s:%s (admins%s)' % (parts[0], parts[1], parts[2].rstrip())) #info_perms
+        ach = self.achievestruct[achievement.lower()]
+        if asker in self.admins and ach.restricted in ['True', 'true', 'yes', 'restricted']:
+            return (self._saypick('info_perms'), '%s: %s (restricted, allowed users: %s)' % (ach.name, ach.description, ach.perms)) #info_perms
         else:
-            return (self._saypick('info_success'), '%s:%s' % (parts[0], parts[1])) #info_success
+            return (self._saypick('info_success'), '%s: %s' % (ach.name, ach.description)) #info_success
 
     def help(self, *args):
         script = ['I am Achievebot, made to track IRC achievements',
@@ -122,24 +174,18 @@ class AchievementHandler:
         return (self._saypick('help'), '\n'.join(script)) #help
 
     def ungrant(self, asker, channel, ungrant_block):
-        output = []
-        earned = False
         user, achievement = ungrant_block.split(None, 1)
-        with open(self.userfile, 'r') as reader:
-            for line in reader:
-                if '%s -> %s'.lower() % (user, achievement) not in line.lower():
-                    output.append(line)
-                else:
-                    earned = True
-        if not earned:
+        if achievement.lower() not in map(str.lower, self.userstruct[user.lower()]):
             return (self._saypick('ungrant_unearned'), 'User %s has not earned that achievement' % user) #ungrant_unearned
-        with open(self.userfile, 'w') as writer:
-            writer.writelines(output)
-        return (self._saypick('ungrant_success'), "Achievement %s has been removed from %s" % (self._achname(achievement), user)) #ungrant_success
+        self.userstruct[user.lower()].remove(self.achievestruct[achievement.lower()].name)
+        self.write_users()
+        return (self._saypick('ungrant_success'), "Achievement %s has been removed from %s" % (self.achievestruct[achievement.lower()].name, user)) #ungrant_success
 
     def reload(self, config):
         for setting in config:
             setattr(self, setting[0], setting[1])
+        self.achievestruct = self.read_achievements()
+        self.userstruct = self.read_users()
 
 class AchieveBot(irc.IRCClient):
     """
@@ -228,9 +274,6 @@ class AchieveBotFactory(protocol.ClientFactory):
 
     def clientConnectionLost(self, connector, reason):
         reactor.stop()
-        #reconnect if connection lost
-        #connector.connect()
-
 
     def clientConnectionFailed(self, connector, reason):
         reactor.stop()
@@ -240,7 +283,6 @@ class AchieveBotFactory(protocol.ClientFactory):
         conf.read(self.config)
         self.ircopts = conf.items('IRC Options')
         self.appopts = conf.items('Achievement Options')
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Bot for IRC achievements')

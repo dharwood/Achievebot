@@ -40,7 +40,7 @@ These options can be set in the configuration (by default, abot.conf), or when t
 Achievements are stored in the file 'achievements'. Each achievement is on one line and has the format:
 
 ```
-<name> : <description>
+<name> : <description> : <restricted> : <permissions>
 ```
 
 The intention is that the description would be something somewhat silly followed by something in parentheses about how to earn the achievement (though this is completely optional).
@@ -48,7 +48,7 @@ The intention is that the description would be something somewhat silly followed
 Information about which user have earned which achievements is stored in the file 'users'. Each entry takes one line and is of the format:
 
 ```
-<name> -> <achievement-name>
+<name> -> <achievement-name>;<achievement-name>;<achievement-name>
 ```
 
 ## Commands
@@ -63,19 +63,23 @@ Information about which user have earned which achievements is stored in the fil
 * listachieve: Show a list of all available achievements
 * info &lt;achievement&gt;: Show the full description of an achievement
 * help: Show the available commands and source information
-* reload: Reload the configuration settings from the configuration file (This only affects IRC Options and Achievement Options and requires admin powers)
+* reload: Reload the configuration settings from the configuration file and re-read the information in the achievefile and the userfile (This only affects IRC Options and Achievement Options and requires admin powers)
 
-Admin powers are granted by placing the admins' nicks in the list admins in AchieveBotFactory.
+Admin powers are granted by placing the admins' nicks in the list admins in AchieveBotFactory. In addition what's listed above, admins also have the ability to add restricted achievements with the format &lt;user&gt; : &lt;description&gt; : &lt;restricted&gt; : &lt;perms&gt; where &lt;restricted&gt; is either 'True' or 'False' depending on if the achievement is restricted, and &lt;perms&gt; is a space seperated list of names that can grant that achievement.
 
 ## Current Status
 
 Achievebot is still very young. Currently, it can connecs to the server, join and leave channels, answer to private messages, and grant, add, and display information on achievements. Giving Achievebot the command 'help' will display information about using the commands and about the bot itself.
 
-Please note that **there is very little access control**. This means that when the bot is running, anyone can tell it to add or grant any achievement, or flood a channel with help or achievement info. Please make sure that this is OK before you start running the bot, and don't be surprised if ops kick the bot (or you) for being a problem. Make sure that you also add your nick and the nicks of others you trust to the admins list in the configuration file.
+Please note that **there is very little access control**. This means that when the bot is running, anyone can tell it to add/grant/ungrant any achievement, or flood a channel with help or achievement info. Please make sure that this is OK before you start running the bot, and don't be surprised if ops kick the bot (or you) for being a problem. Make sure that you also add your nick and the nicks of others you trust to the admins list in the configuration file.
 
 ## Future Plans
 
-* Some kind of access control for users
+* More access control
+* Edit command
+* Meta-achievements (get achievements a, b, c, d, and e, automatically get achievement f)
+* Progressive achievements (needs to be granted multiple times before it's earned, and each grant add x% of the progress)
+* Repeating achievements (earn the same achievement multiple times)
 * Code cleanup (it's a bit of a mess at the moment)
 * Probably plenty more that I didn't think of while I was typing this (suggestions and pull requests always welcome)
 
