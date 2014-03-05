@@ -83,7 +83,7 @@ class AchievementHandler:
         Write all of the user information out to file
         """
         with open(self.userfile, 'w') as users:
-            users.write('\n'.join([' -> '.join((name, ';'.join(self.userstruct[name]))) for name in self.userstruct.keys()]))
+            users.write('\n'.join([' -> '.join((name, ';'.join(self.userstruct[name.lower()]))) for name in self.userstruct.keys()]))
 
     def append_achievement(self, achievement):
         """
@@ -111,7 +111,7 @@ class AchievementHandler:
         """
         user, achievement = grant_block.split(None, 1)
         if achievement.lower() in self.achievestruct:
-            if achievement.lower() in self.userstruct[user.lower()]:
+            if self.achievestruct[achievement.lower()].name in self.userstruct[user.lower()]:
                 return (self._saypick('grant_earned'), 'Achievement already earned!') #grant_earned
             if self.achievestruct[achievement.lower()].restricted in ['True', 'true', 'yes', 'restricted']:
                 perms = self.achievestruct[achievement.lower()].perms.split()
