@@ -111,6 +111,8 @@ class AchievementHandler:
         """
         user, achievement = grant_block.split(None, 1)
         if achievement.lower() in self.achievestruct:
+            if user.lower() not in self.userstruct:
+                return self._grant(user, self.achievestruct[achievement.lower()].name)
             if self.achievestruct[achievement.lower()].name in self.userstruct[user.lower()]:
                 return (self._saypick('grant_earned'), 'Achievement already earned!') #grant_earned
             if self.achievestruct[achievement.lower()].restricted in ['True', 'true', 'yes', 'restricted']:
